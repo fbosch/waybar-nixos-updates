@@ -93,7 +93,7 @@ In json:
 In nix:
 ```nix
 "custom/nix-updates" = {
-  exec = "update-checker-v13";
+  exec = "$HOME/bin/update-checker";
   signal = 12;
   on-click = "";
   on-click-right = "rm ~/.cache/nix-update-last-run";
