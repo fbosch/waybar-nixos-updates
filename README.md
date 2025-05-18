@@ -25,9 +25,9 @@ System Requirements:
 
 ## Privacy
 External Network Requests: The script uses `ping -c 1 -W 2 8.8.8.8` to check network connectivity and send packets to Google's DNS servers (8.8.8.8), which could potentially reveal:
-     - That your system is running and online
-     - The fact you're using this specific script
-     - Your IP address to Google's DNS infrastructure
+- That your system is running and online
+- The fact you're using this specific script
+- Your IP address to Google's DNS infrastructure
 
 
 ## How it Works: Step by Step
@@ -111,7 +111,7 @@ To style use the `#custom-nix-updates` ID in your Waybar styles file (`~/.config
 
 
 If you have you have UPDATE_LOCK_FILE set to "false", the UPDATE_FLAG file will signal that your lock file has been updated. Add the following to your update script, used to update your lock file (i.e. "nix flake update" script), so that the output of nvd diff is piped in:
-| tee >(if grep -qe '\\[U'; then touch \"$HOME/.cache/nix-update-update-flag\"; else rm -f \"$HOME/.cache/nix-update-update-flag\"; fi) &&
+`| tee >(if grep -qe '\\[U'; then touch \"$HOME/.cache/nix-update-update-flag\"; else rm -f \"$HOME/.cache/nix-update-update-flag\"; fi) &&`
 
 For example:
 ```nix
@@ -124,7 +124,7 @@ For example:
 ```
 
 The REBUILD_FLAG signals this script to run after your system has been rebuilt. Add this to your update script to create the REBUILD_FLAG and send a signal to waybar to refresh after updating:
-touch $HOME/.cache/nix-update-rebuild-flag && pkill -x -RTMIN+12 .waybar-wrapped &&
+`touch $HOME/.cache/nix-update-rebuild-flag && pkill -x -RTMIN+12 .waybar-wrapped &&`
 
 For example:
 ```nix
