@@ -2,6 +2,7 @@
 A Waybar update checking script for NixOS.
 
 Here's how the module looks in Waybar with and without updates:
+
 ![Screenshot with updates](/resources/screenshot-thumbnail-has-updates.png)
 ![Screenshot updates](/resources/screenshot-thumbnail-updated.png)
 
