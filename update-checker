@@ -184,8 +184,12 @@ function check_for_updates() {
         cd "$NIXOS_CONFIG_PATH" || return 1
         nix flake update
         nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel
-        updates=$(nvd diff /run/current-system ./result | grep -e '\[U' | wc -l)
-        tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n')
+        if [ "$?" -eq 0 ]; then
+            updates=$(nvd diff /run/current-system ./result | grep -e '\[U' | wc -l)
+            tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n')
+        else
+            return 1
+        fi
     else
         # Use a temp directory to avoid modifying lock file
         cp -r "$NIXOS_CONFIG_PATH"/* "$tempdir"
@@ -264,7 +268,7 @@ function main() {
                   var_setter
               else
                   # Update check failed
-                  updates="N/A"
+                  updates=""
                   alt="error"
                   tooltip="Update check failed"
               fi
