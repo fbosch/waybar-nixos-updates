@@ -1,5 +1,5 @@
 # waybar-nixos-updates
-A Waybar update checking script for NixOS.
+A Waybar update checking script for NixOS that checks for available updates and displays them in your Waybar.
 
 Here's how the module looks in Waybar with and without updates:
 
@@ -47,29 +47,31 @@ External Network Requests: The script uses `ping -c 1 -W 2 8.8.8.8` to check net
 
 7. **Update Check Timing**: Determines if it's time to check for updates based on the last check timestamp.
 
-8. **Temporary Environment**: Creates a temporary directory for performing update checks without modifying the system.
+8. **Update Status Tracking**: Uses an updating flag to separate the updating phase from the updated phase.
 
-9. **Flake Update**: Runs `nix flake update` either in the config directory or temp directory based on settings.
+9. **Temporary Environment**: Creates a temporary directory for performing update checks without modifying the system.
 
-10. **System Build**: Builds the updated system configuration to compare with the current one.
+10. **Flake Update**: Runs `nix flake update` either in the config directory or temp directory based on settings.
 
-11. **Update Comparison**: Uses `nvd diff` to compare current system with the new build and count updates.
+11. **System Build**: Builds the updated system configuration to compare with the current one.
 
-12. **Result Storage**: Saves the number of updates and detailed update information to state files.
+12. **Update Comparison**: Uses `nvd diff` to compare current system with the new build and count updates.
 
-13. **Notification**: Sends desktop notifications to inform the user about the update status.
+13. **Result Storage**: Saves the number of updates and detailed update information to state files.
 
-14. **JSON Output**: Generates a JSON object with update count, status indicator, and tooltip for Waybar.
+14. **Notification**: Sends desktop notifications to inform the user about the update status.
 
-15. **Flag Management**: Cleans up system update flags if a rebuild was detected.
+15. **JSON Output**: Generates a JSON object with update count, status indicator, and tooltip for Waybar.
 
-16. **Error Handling**: Sets appropriate status messages if update checks fail or network is unavailable.
+16. **Flag Management**: Cleans up system update flags if a rebuild was detected.
 
-17. **Tooltip Generation**: Creates detailed tooltips showing which packages have updates available.
+17. **Error Handling**: Sets appropriate status messages if update checks fail or network is unavailable.
 
-18. **State Management**: Manages update state across multiple runs of the script.
+18. **Tooltip Generation**: Creates detailed tooltips showing which packages have updates available.
 
-19. **Output Formatting**: Formats the final output to be compatible with Waybar's custom module format.
+19. **State Management**: Manages update state across multiple runs of the script.
+
+20. **Output Formatting**: Formats the final output to be compatible with Waybar's custom module format.
 
 
 ## How to Use
@@ -94,6 +96,7 @@ The script uses several cache files in your ~/.cache directory:
 - `nix-update-boot-marker`: Used to detect system boot/resume events
 - `nix-update-update-flag`: Signals that your lock file has been updated
 - `nix-update-rebuild-flag`: Signals that your system has been rebuilt
+- `nix-update-updating-flag`: Signals that an update process is currently performing
 
 ### Waybar Integration
 
@@ -111,8 +114,10 @@ In json:
     "return-type": "json",
     "format": "{} {icon}",
     "format-icons": {
-        "has-updates": "", // icon when updates needed
-        "updated": "" // icon when all packages updated
+        "has-updates": "󰚰", // icon when updates needed
+        "updating": "", // icon when updating
+        "updated": "", // icon when all packages updated
+        "error": "" // icon when errot occurs
     },
 },
 ```
@@ -129,8 +134,10 @@ In nix:
   return-type = "json";
   format = "{} {icon}";
   format-icons = {
-    has-updates = "";
+    has-updates = "󰚰";
+    updating = "";
     updated = "";
+    error = "";
   };
 };
 ```
@@ -159,7 +166,7 @@ This works with the `signal: 12` parameter in the Waybar configuration, which ca
 ### Notifications
 
 The script sends desktop notifications to keep you informed:
-- When starting an update check: "Checking for Updates"
+- When starting an update check: "Checking for Updates - Please be patient"
 - When throttled due to recent checks: "Please Wait" with time until next check
 - When updates are found: "Update Check Complete" with the number of updates
 - When no updates are found: "Update Check Complete - No updates available"

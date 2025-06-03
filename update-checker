@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# NixOS Update Checker for Waybar
+# This script checks for NixOS updates and outputs JSON for Waybar integration
+
 # ===== Configuration =====
 UPDATE_INTERVAL=3599  # Check interval in seconds (1 hour)
 NIXOS_CONFIG_PATH="$HOME/.config/nixos"  # Path to NixOS configuration
@@ -287,7 +290,7 @@ function main() {
                   touch $UPDATING_FLAG
                   # Rerun same script just to show updating status and
                   # run update process in separate thread
-                  pkill -x -RTMIN+12 .waybar-wrapped 
+                  pkill -x -RTMIN+12 .waybar-wrapped
               fi
           else
               # Use saved state
