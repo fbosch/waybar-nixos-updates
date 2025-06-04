@@ -1,3 +1,10 @@
+# PRs Welcome!
+Things left to fix:
+[X] Improve error Handling
+[X] Show an "updating" icon while updating
+[ ] Make an optional animated spinner while updating
+[ ] Remove the additional space at the bottom of the tooltip
+
 # waybar-nixos-updates
 A Waybar update checking script for NixOS that checks for available updates and displays them in your Waybar.
 
