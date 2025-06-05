@@ -11,12 +11,12 @@ Here's how the module's tooltip looks when updates are available:
 
 Credit goes to [this project](https://github.com/J-Carder/waybar-apt-updates) for the idea and starting point.
 
-PRs Welcome! Things left to fix:
-[X] Improve error Handling
-[X] Show an "updating" icon while updating
-[ ] Make an optional animated spinner while updating
-[ ] Remove the additional space at the bottom of the tooltip
-
+PRs Welcome! Things left to fix:  
+[X] Improve error Handling  
+[X] Show an "updating" icon while updating  
+[ ] Make an optional animated spinner while updating  
+[ ] Remove the additional space at the bottom of the tooltip  
+  
 
 ## Dependencies:
 This script assumes your flake is in ~/.config/nixos and that your flake's nixosConfigurations is named the same as your $hostname.
