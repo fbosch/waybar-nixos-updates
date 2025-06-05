@@ -1,3 +1,10 @@
+PRs Welcome! Things left to fix:  
+- [x] Improve error Handling  
+- [x] Show an "updating" icon while updating  
+- [ ] Make an optional animated spinner while updating  
+- [ ] Remove the additional space at the bottom of the tooltip  
+  
+
 # waybar-nixos-updates
 A Waybar update checking script for NixOS that checks for available updates and displays them in your Waybar.
 
@@ -10,13 +17,6 @@ Here's how the module's tooltip looks when updates are available:
 ![Screenshot with updates](/resources/screenshot-has-updates.png)
 
 Credit goes to [this project](https://github.com/J-Carder/waybar-apt-updates) for the idea and starting point.
-
-PRs Welcome! Things left to fix:  
-- [x] Improve error Handling  
-- [x] Show an "updating" icon while updating  
-- [ ] Make an optional animated spinner while updating  
-- [ ] Remove the additional space at the bottom of the tooltip  
-  
 
 ## Dependencies:
 This script assumes your flake is in ~/.config/nixos and that your flake's nixosConfigurations is named the same as your $hostname.

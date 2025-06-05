@@ -278,7 +278,7 @@ function main() {
                       var_setter
                   else
                       # Update check failed
-                      updates="X"
+                      updates=""
                       alt="error"
                       tooltip="Update check failed"
                   fi
