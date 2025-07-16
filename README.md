@@ -1,8 +1,11 @@
 PRs Welcome! Things left to fix:  
 - [x] Improve error Handling  
 - [x] Show an "updating" icon while updating  
+- [x] Add notification icons  
+- [ ] Create a nix flake
 - [ ] Make an optional animated spinner while updating  
 - [ ] Remove the additional space at the bottom of the tooltip  
+- [ ] Look at the forks way of handling the temp build using a flag vs temp dir
   
 
 # waybar-nixos-updates
@@ -37,51 +40,8 @@ External Network Requests: The script uses `ping -c 1 -W 2 8.8.8.8` to check net
 - The fact you're using this specific script
 - Your IP address to Google's DNS infrastructure
 
-
-## How it Works: Step by Step
-1. **Configuration Setup**: Defines update intervals, file paths, and flags to track the update state.
-
-2. **File Initialization**: Creates necessary state files if they don't exist (tracks update count, last check time, and tooltip info).
-
-3. **Boot/Resume Detection**: Detects if the system has recently booted or resumed from suspension/hibernation to avoid unnecessary resource usage during these transition periods.
-
-4. **Grace Period Management**: Applies a configurable grace period after boot or resume before running update checks.
-
-5. **Network Check**: Verifies internet connectivity by pinging 8.8.8.8.
-
-6. **System Update Status**: Checks if the system was recently rebuilt by looking for the rebuild flag.
-
-7. **Update Check Timing**: Determines if it's time to check for updates based on the last check timestamp.
-
-8. **Update Status Tracking**: Uses an updating flag to separate the updating phase from the updated phase.
-
-9. **Temporary Environment**: Creates a temporary directory for performing update checks without modifying the system.
-
-10. **Flake Update**: Runs `nix flake update` either in the config directory or temp directory based on settings.
-
-11. **System Build**: Builds the updated system configuration to compare with the current one.
-
-12. **Update Comparison**: Uses `nvd diff` to compare current system with the new build and count updates.
-
-13. **Result Storage**: Saves the number of updates and detailed update information to state files.
-
-14. **Notification**: Sends desktop notifications to inform the user about the update status.
-
-15. **JSON Output**: Generates a JSON object with update count, status indicator, and tooltip for Waybar.
-
-16. **Flag Management**: Cleans up system update flags if a rebuild was detected.
-
-17. **Error Handling**: Sets appropriate status messages if update checks fail or network is unavailable.
-
-18. **Tooltip Generation**: Creates detailed tooltips showing which packages have updates available.
-
-19. **State Management**: Manages update state across multiple runs of the script.
-
-20. **Output Formatting**: Formats the final output to be compatible with Waybar's custom module format.
-
-
 ## How to Use
-Download the `update-checker` script, put it in your [PATH](https://unix.stackexchange.com/a/26059) and make it executable (`chmod +x update-checker`).
+Download the `update-checker` script, put it in your [PATH](https://unix.stackexchange.com/a/26059) and make it executable (`chmod +x update-checker`). Add the icons to your ~/.icons folder.
 
 ### Configuration Options
 

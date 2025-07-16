@@ -67,9 +67,11 @@ function init_files() {
 
 # ===== Helper Functions =====
 function send_notification() {
-    local title="$1"
-    local message="$2"
-    notify-send "$title" "$message" -e
+    local icon="$1"
+    local title="$2"
+    local message="$3"
+    local expire_flag="$4" # Optional fourth parameter for -e flag
+    notify-send "$HOME/.icons/$icon.png" "$title" "$message" $expire_flag
 }
 
 function check_boot_resume() {
@@ -182,7 +184,7 @@ function check_for_updates() {
     # Ensure cleanup happens when script exits
     trap "rm -rf '$tempdir'" EXIT
 
-    send_notification "Checking for Updates" "Please be patient"
+    send_notification "updates-checking" "Checking for Updates" "Please be patient" -e
 
     local updates=0
     local tooltip=""
@@ -218,13 +220,13 @@ function check_for_updates() {
 
     if [ "$updates" -eq 0 ]; then
         echo "System updated" > "$LAST_RUN_TOOLTIP"
-        send_notification "Update Check Complete" "No updates available"
+        send_notification "updates-complete" "Update Check Complete" "No updates available" -e
     elif [ "$updates" -eq 1 ]; then
         echo "$tooltip" > "$LAST_RUN_TOOLTIP"
-        send_notification "Update Check Complete" "Found 1 update"
+        send_notification "updates-pending" "Update Check Complete" "Found 1 update" -e
     else
         echo "$tooltip" > "$LAST_RUN_TOOLTIP"
-        send_notification "Update Check Complete" "Found $updates updates"
+        send_notification "updates-pending" "Update Check Complete" "Found $updates updates" -e
     fi
 
     return 0
@@ -281,12 +283,13 @@ function main() {
                       updates=""
                       alt="error"
                       tooltip="Update check failed"
+                      send_notification "updates-failed" "Update Check Failed" "Run <i><b>checkup</b></i> for a more verbose error message"
                   fi
                   rm $UPDATING_FLAG
               else
                   updates=$(cat "$STATE_FILE")
                   alt="updating"
-                  tooltip="Performing an update"
+                  tooltip="Checking for updates"
                   touch $UPDATING_FLAG
                   # Rerun same script just to show updating status and
                   # run update process in separate thread
@@ -294,14 +297,14 @@ function main() {
               fi
           else
               # Use saved state
-              send_notification "Please Wait" "Next update is in $(calc_next_update) min."
+              send_notification "updates-wait" "Please Wait" "Next update is in $(calc_next_update) min." -e
               var_setter
           fi
       fi
     else
         updates=$(cat "$STATE_FILE")
         var_setter
-        send_notification "Update Check Failed" "Not connected to the internet"
+        send_notification "updates-failed" "Update Check Failed" "Not connected to the internet"
     fi
 
     # Output JSON for Waybar
