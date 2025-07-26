@@ -196,7 +196,7 @@ function check_for_updates() {
         nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel
         if [ "$?" -eq 0 ]; then
             updates=$(nvd diff /run/current-system ./result | grep -e '\[U' | wc -l)
-            tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n')
+            tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n' | sed 's/\\n$//')
         else
             return 1
         fi
