@@ -1,12 +1,12 @@
-PRs Welcome! Things left to fix:  
-- [x] Improve error Handling  
-- [x] Show an "updating" icon while updating  
-- [x] Add notification icons  
+PRs Welcome! Things left to fix:
+- [x] Improve error Handling
+- [x] Show an "updating" icon while updating
+- [x] Add notification icons
 - [ ] Create a nix flake
-- [ ] Make an optional animated spinner while updating  
-- [ ] Remove the additional space at the bottom of the tooltip  
+- [ ] Make an optional animated spinner while updating
+- [x] Remove the additional space at the bottom of the tooltip
 - [ ] Look at the forks way of handling the temp build using a flag vs temp dir
-  
+
 
 # waybar-nixos-updates
 A Waybar update checking script for NixOS that checks for available updates and displays them in your Waybar.
