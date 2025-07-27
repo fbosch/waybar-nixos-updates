@@ -2,7 +2,7 @@ PRs Welcome! Things left to fix:
 - [x] Improve error Handling
 - [x] Show an "updating" icon while updating
 - [x] Add notification icons
-- [ ] Create a nix flake
+- [x] Create a nix flake
 - [ ] Make an optional animated spinner while updating
 - [x] Remove the additional space at the bottom of the tooltip
 - [ ] Look at the forks way of handling the temp build using a flag vs temp dir
@@ -137,6 +137,8 @@ The script sends desktop notifications to keep you informed:
 - When updates are found: "Update Check Complete" with the number of updates
 - When no updates are found: "Update Check Complete - No updates available"
 - When connectivity fails: "Update Check Failed - Not connected to the internet"
+- When an update fails: "Update Check Failed - Run checkup for a more verbose error message"
+
 
 These notifications require `notify-send` to be installed on your system.
 
