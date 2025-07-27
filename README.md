@@ -6,6 +6,7 @@ PRs Welcome! Things left to fix:
 - [ ] Make an optional animated spinner while updating
 - [x] Remove the additional space at the bottom of the tooltip
 - [ ] Look at the forks way of handling the temp build using a flag vs temp dir
+- [ ] Add an optional on/off toggle
 
 
 # waybar-nixos-updates
