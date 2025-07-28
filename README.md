@@ -131,19 +131,6 @@ The REBUILD_FLAG signals this script to run after your system has been rebuilt. 
 
 This works with the `signal: 12` parameter in the Waybar configuration, which causes Waybar to run the script when it receives RTMIN+12 signal.
 
-### Notifications
-
-The script sends desktop notifications to keep you informed:
-- When starting an update check: "Checking for Updates - Please be patient"
-- When throttled due to recent checks: "Please Wait" with time until next check
-- When updates are found: "Update Check Complete" with the number of updates
-- When no updates are found: "Update Check Complete - No updates available"
-- When connectivity fails: "Update Check Failed - Not connected to the internet"
-- When an update fails: "Update Check Failed - Run checkup for a more verbose error message"
-
-
-These notifications require `notify-send` to be installed on your system.
-
 For example:
 ```nix
 nixup =
@@ -154,5 +141,19 @@ nixup =
   pkill -x -RTMIN+12 .waybar-wrapped; fi &&
   popd";
 ```
+
+### Notifications
+
+The script sends desktop notifications to keep you informed:
+- When starting an update check: "Checking for Updates - Please be patient"
+- When throttled due to recent checks: "Please Wait" with time until next check
+- When updates are found: "Update Check Complete" with the number of updates
+- When no updates are found: "Update Check Complete - No updates available"
+- When connectivity fails: "Update Check Failed - Not connected to the internet"
+- When an update fails: "Update Check Failed - Check tooltip for detailed error message"
+
+
+These notifications require `notify-send` to be installed on your system.
+
 
 For more information see the [Waybar wiki](https://github.com/Alexays/Waybar/wiki).
