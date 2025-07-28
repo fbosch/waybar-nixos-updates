@@ -43,7 +43,9 @@ External Network Requests: The script uses `ping -c 1 -W 2 8.8.8.8` to check net
 - Your IP address to Google's DNS infrastructure
 
 ## How to Use
-Download the `update-checker` script, put it in your [PATH](https://unix.stackexchange.com/a/26059) and make it executable (`chmod +x update-checker`). Add the icons to your ~/.icons folder.
+You can either use the nix flake (default.nix), or install it manually.
+
+For a manual installation, download the `update-checker` script, put it in your [PATH](https://unix.stackexchange.com/a/26059) and make it executable (`chmod +x update-checker`). Add the icons to your ~/.icons folder.
 
 ### Configuration Options
 
@@ -56,21 +58,12 @@ You can modify these variables at the top of the script to customize behavior:
 - `GRACE_PERIOD`: Time in seconds to wait after boot/resume before checking (default: 60)
 - `UPDATE_LOCK_FILE`: Whether to update the lock file directly or use a temporary copy (default: false)
 
-#### Cache Files
-The script uses several cache files in your ~/.cache directory:
-- `nix-update-state`: Stores the current number of available updates
-- `nix-update-last-run`: Tracks when the last update check was performed
-- `nix-update-tooltip`: Contains the tooltip text with update details
-- `nix-update-boot-marker`: Used to detect system boot/resume events
-- `nix-update-update-flag`: Signals that your lock file has been updated
-- `nix-update-rebuild-flag`: Signals that your system has been rebuilt
-- `nix-update-updating-flag`: Signals that an update process is currently performing
 
 ### Waybar Integration
 
-To configure, add the following to your Waybar config (`~/.config/waybar/config`).
+To configure, add one of the following configurations to your Waybar config (`~/.config/waybar/config`).
 
-In json:
+In json (for Arch Linux users):
 ```json
 "custom/nix-updates": {
     "exec": "$HOME/bin/update-checker", // <--- path to script
@@ -90,7 +83,7 @@ In json:
 },
 ```
 
-In nix:
+In nix (for NixOS users):
 ```nix
 "custom/nix-updates" = {
   exec = "$HOME/bin/update-checker";
@@ -116,7 +109,7 @@ To style use the `#custom-nix-updates` ID in your Waybar styles file (`~/.config
 If you have UPDATE_LOCK_FILE set to "false", the UPDATE_FLAG file will signal that your lock file has been updated. Add the following to your update script, used to update your lock file (i.e. "nix flake update" script), so that the output of nvd diff is piped in:
 `| tee >(if grep -qe '\\[U'; then touch \"$HOME/.cache/nix-update-update-flag\"; else rm -f \"$HOME/.cache/nix-update-update-flag\"; fi) &&`
 
-For example:
+For example, here's my personal flake update script:
 ```nix
 checkup =
   "pushd ~/.config/nixos &&
@@ -131,7 +124,7 @@ The REBUILD_FLAG signals this script to run after your system has been rebuilt. 
 
 This works with the `signal: 12` parameter in the Waybar configuration, which causes Waybar to run the script when it receives RTMIN+12 signal.
 
-For example:
+For another example, here's my personal rebuild script:
 ```nix
 nixup =
   "pushd ~/.config/nixos &&
@@ -143,7 +136,6 @@ nixup =
 ```
 
 ### Notifications
-
 The script sends desktop notifications to keep you informed:
 - When starting an update check: "Checking for Updates - Please be patient"
 - When throttled due to recent checks: "Please Wait" with time until next check
@@ -152,8 +144,16 @@ The script sends desktop notifications to keep you informed:
 - When connectivity fails: "Update Check Failed - Not connected to the internet"
 - When an update fails: "Update Check Failed - Check tooltip for detailed error message"
 
-
 These notifications require `notify-send` to be installed on your system.
 
+#### Cache Files
+The script uses several cache files in your ~/.cache directory:
+- `nix-update-state`: Stores the current number of available updates
+- `nix-update-last-run`: Tracks when the last update check was performed
+- `nix-update-tooltip`: Contains the tooltip text with update details
+- `nix-update-boot-marker`: Used to detect system boot/resume events
+- `nix-update-update-flag`: Signals that your lock file has been updated
+- `nix-update-rebuild-flag`: Signals that your system has been rebuilt
+- `nix-update-updating-flag`: Signals that an update process is currently performing
 
 For more information see the [Waybar wiki](https://github.com/Alexays/Waybar/wiki).
