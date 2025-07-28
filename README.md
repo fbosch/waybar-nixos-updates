@@ -3,7 +3,7 @@ PRs Welcome! Things left to fix:
 - [x] Show an "updating" icon while updating
 - [x] Add notification icons
 - [x] Create a nix flake
-- [x] Failed updates populate a detailed error message in the 
+- [x] Failed updates populate a detailed error message in the tooltip
 - [ ] Make an optional animated spinner while updating
 - [x] Remove the additional space at the bottom of the tooltip
 - [ ] Look at the fork's way of handling the temp build using a flag vs temp dir
