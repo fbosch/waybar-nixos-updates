@@ -183,21 +183,26 @@ let
         local tempdir=$(mktemp -d)
         # Ensure cleanup happens when script exits
         trap "rm -rf '$tempdir'" EXIT
-
+    
         send_notification "updates-checking" "Checking for Updates" "Please be patient" -e
-
+    
         local updates=0
         local tooltip=""
-
+        local error_output=""
+    
         if [ "$UPDATE_LOCK_FILE" = "true" ]; then
             # Use the config directory directly
             cd "$NIXOS_CONFIG_PATH" || return 1
             nix flake update
-            nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel
+            # Capture stderr and extract the error line
+            error_output=$(nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel 2>&1)
             if [ "$?" -eq 0 ]; then
                 updates=$(nvd diff /run/current-system ./result | grep -e '\[U' | wc -l)
-                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n')
+                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n' | sed 's/\\n$//')
             else
+                # Extract just the error line starting with "error:"
+                error_line=$(echo "$error_output" | grep "^       error:" | head -1 | sed 's/^[[:space:]]*//')
+                echo "$error_line" > "$LAST_RUN_TOOLTIP"
                 return 1
             fi
         else
@@ -205,19 +210,23 @@ let
             cp -r "$NIXOS_CONFIG_PATH"/* "$tempdir"
             cd "$tempdir" || return 1
             nix flake update
-            nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel
+            # Capture stderr and extract the error line
+            error_output=$(nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel 2>&1)
             if [ "$?" -eq 0 ]; then
                 updates=$(nvd diff /run/current-system ./result | grep -e '\[U' | wc -l)
-                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n' | sed 's/\\n$//')
+                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n')
             else
+                # Extract just the error line starting with "error:"
+                error_line=$(echo "$error_output" | grep "^       error:" | head -1 | sed 's/^[[:space:]]*//')
+                echo "$error_line" > "$LAST_RUN_TOOLTIP"
                 return 1
             fi
         fi
-
+    
         # Save results
         echo "$updates" > "$STATE_FILE"
         echo "$(date +%s)" > "$LAST_RUN_FILE"
-
+    
         if [ "$updates" -eq 0 ]; then
             echo "System updated" > "$LAST_RUN_TOOLTIP"
             send_notification "updates-complete" "Update Check Complete" "No updates available" -e
@@ -228,7 +237,7 @@ let
             echo "$tooltip" > "$LAST_RUN_TOOLTIP"
             send_notification "updates-pending" "Update Check Complete" "Found $updates updates" -e
         fi
-
+    
         return 0
     }
 
@@ -277,13 +286,13 @@ let
                       # Time to check for updates
                       if check_for_updates; then
                           updates=$(cat "$STATE_FILE")
-                          var_setter
+                          var_setter                      
                       else
-                          # Update check failed
+                          # Update check failed - read the full error from tooltip file
                           updates=""
                           alt="error"
-                          tooltip="Update check failed"
-                          send_notification "updates-failed" "Update Check Failed" "Run <i><b>checkup</b></i> for a more verbose error message"
+                          tooltip=$(cat "$LAST_RUN_TOOLTIP")
+                          send_notification "updates-failed" "Update Check Failed" "Check tooltip for detailed error message"
                       fi
                       rm $UPDATING_FLAG
                   else

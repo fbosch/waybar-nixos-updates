@@ -5,7 +5,7 @@ PRs Welcome! Things left to fix:
 - [x] Create a nix flake
 - [ ] Make an optional animated spinner while updating
 - [x] Remove the additional space at the bottom of the tooltip
-- [ ] Look at the forks way of handling the temp build using a flag vs temp dir
+- [ ] Look at the fork's way of handling the temp build using a flag vs temp dir
 - [ ] Add an optional on/off toggle
 
 
