@@ -106,8 +106,13 @@ In nix (for NixOS users):
 
 To style use the `#custom-nix-updates` ID in your Waybar styles file (`~/.config/waybar/styles.css`).
 
+### System Integration
+You can integrate the updater with your system by modifying your flake update script and your rebuild script with the UPDATE_FLAG variable and the REBUILD_FLAG variable, respectively.
 
-If you have UPDATE_LOCK_FILE set to "false", the UPDATE_FLAG file will signal that your lock file has been updated. Add the following to your update script, used to update your lock file (i.e. "nix flake update" script), so that the output of nvd diff is piped in:
+## Your Flake Update Script and the UPDATE_FLAG
+You can integrate your system to control the UPDATE_FLAG, which is saved in the "nix-update-update-flag" cache file. If you have UPDATE_LOCK_FILE set to "true", no further action is required. The program will detect if your lock file has been updated. If you have UPDATE_LOCK_FILE set to "false", the "nix-update-update-flag" file will signal that your lock file has been updated.
+
+To integrate the update checker with your system, add the following to the update script you use to update your system's lock file (i.e. your "nix flake update" script), so that the output of nvd diff is piped in:
 `| tee >(if grep -qe '\\[U'; then touch \"$HOME/.cache/nix-update-update-flag\"; else rm -f \"$HOME/.cache/nix-update-update-flag\"; fi) &&`
 
 For example, here's my personal flake update script:
@@ -120,7 +125,8 @@ checkup =
   popd";
 ```
 
-The REBUILD_FLAG signals this script to run after your system has been rebuilt. Add this to your update script to create the REBUILD_FLAG and send a signal to waybar to refresh after updating:
+## Your Rebuild Script and the REBUILD_FLAG
+The REBUILD_FLAG, which is saved in the "nix-update-rebuild-flag" cache file, signals this script to run after your system has been rebuilt. Add this to your update script to create the REBUILD_FLAG and send a signal to waybar to refresh after updating:
 `if [ -f \"$HOME/.cache/nix-update-update-flag\" ]; then touch \"$HOME/.cache/nix-update-rebuild-flag\" && pkill -x -RTMIN+12 .waybar-wrapped; fi &&`
 
 This works with the `signal: 12` parameter in the Waybar configuration, which causes Waybar to run the script when it receives RTMIN+12 signal.
