@@ -94,7 +94,7 @@ In nix (if adding it "the nix way" through home-manager):
 To style use the `#custom-nix-updates` ID in your Waybar styles file (`~/.config/waybar/styles.css`). For more information see the [Waybar wiki](https://github.com/Alexays/Waybar/wiki).
 
 ### System Integration
-You can integrate the updater with your system by modifying your flake update script and your rebuild script with the UPDATE_FLAG variable and the REBUILD_FLAG variable, respectively.
+You can integrate the updater with your system by modifying your flake update script and your rebuild script to pass the UPDATE_FLAG variable and the REBUILD_FLAG variable, respectively.
 
 #### Your Flake Update Script and the UPDATE_FLAG
 You can integrate your system to control the UPDATE_FLAG, which is saved in the "nix-update-update-flag" cache file. If you have UPDATE_LOCK_FILE set to "true", no further action is required. The program will detect if your lock file has been updated. If you have UPDATE_LOCK_FILE set to "false", the "nix-update-update-flag" file will signal that your lock file has been updated.
