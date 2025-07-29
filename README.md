@@ -28,7 +28,6 @@ Credit goes to [this project](https://github.com/J-Carder/waybar-apt-updates) fo
 This script assumes your flake is in ~/.config/nixos and that your flake's nixosConfigurations is named the same as your $hostname. It also uses the following commands/programs:
 1. `nix` - Used for `nix flake update` and `nix build` commands
 2. `nvd` - Used for comparing system versions (`nvd diff`)
-3. `notify-send` - Used for desktop notifications. Part of the libnotify library, which is commonly included by default or easily installed.
 
 System Requirements:
 1. NixOS operating system (based on the nature of the script)
