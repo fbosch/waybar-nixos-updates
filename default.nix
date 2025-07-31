@@ -214,7 +214,7 @@ let
             error_output=$(nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel 2>&1)
             if [ "$?" -eq 0 ]; then
                 updates=$(nvd diff /run/current-system ./result | grep -e '\[U' | wc -l)
-                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n')
+                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n' | sed 's/\\n$//')
             else
                 # Extract just the error line starting with "error:"
                 error_line=$(echo "$error_output" | grep "^       error:" | head -1 | sed 's/^[[:space:]]*//')
