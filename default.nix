@@ -198,7 +198,7 @@ let
             error_output=$(nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel 2>&1)
             if [ "$?" -eq 0 ]; then
                 updates=$(nvd diff /run/current-system ./result | grep -e '\[U' | wc -l)
-                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n' | sed 's/\\n$//')
+                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' | awk '{printf "%s%s", (NR>1 ? "\\n" : ""), $0}')
             else
                 # Extract just the error line starting with "error:"
                 error_line=$(echo "$error_output" | grep "^       error:" | head -1 | sed 's/^[[:space:]]*//')
@@ -214,7 +214,7 @@ let
             error_output=$(nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel 2>&1)
             if [ "$?" -eq 0 ]; then
                 updates=$(nvd diff /run/current-system ./result | grep -e '\[U' | wc -l)
-                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n' | sed 's/\\n$//')
+                tooltip=$(nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' | awk '{printf "%s%s", (NR>1 ? "\\n" : ""), $0}')
             else
                 # Extract just the error line starting with "error:"
                 error_line=$(echo "$error_output" | grep "^       error:" | head -1 | sed 's/^[[:space:]]*//')
@@ -286,7 +286,7 @@ let
                       # Time to check for updates
                       if check_for_updates; then
                           updates=$(cat "$STATE_FILE")
-                          var_setter                      
+                          var_setter
                       else
                           # Update check failed - read the full error from tooltip file
                           updates=""
@@ -319,7 +319,6 @@ let
         # Output JSON for Waybar
         echo "{ \"text\":\"$updates\", \"alt\":\"$alt\", \"tooltip\":\"$tooltip\" }"
     }
-
 
     # Execute main function
     main
