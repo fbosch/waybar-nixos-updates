@@ -4,8 +4,8 @@ PRs Welcome! Things left to fix:
 - [x] Add notification icons
 - [x] Create a nix flake
 - [x] Failed updates populate a detailed error message in the tooltip
-- [ ] Make an optional animated spinner while updating
 - [x] Remove the additional space at the bottom of the tooltip
+- [ ] Make an optional animated spinner while updating
 - [ ] Look at the fork's way of handling the temp build using a flag vs temp dir
 - [ ] Replace ping with an offline and more private network connection checker
 - [ ] Add an optional on/off toggle
@@ -24,19 +24,93 @@ Here's how the module's tooltip looks when updates are available:
 
 Credit goes to [this project](https://github.com/J-Carder/waybar-apt-updates) for the idea and starting point.
 
-## Dependencies:
-This script assumes your flake is in ~/.config/nixos and that your flake's nixosConfigurations is named the same as your $hostname. It also uses the following commands/programs:
+## Dependencies
+
+When using the flake, all dependencies are automatically handled. The script requires:
+
+### Commands/Programs:
 1. `nix` - Used for `nix flake update` and `nix build` commands
 2. `nvd` - Used for comparing system versions (`nvd diff`)
+3. `notify-send` - For desktop notifications
+4. Standard utilities: `bash`, `grep`, `awk`, `sed`, `ping`
 
-System Requirements:
-1. NixOS operating system (based on the nature of the script)
+### System Requirements:
+1. NixOS operating system
 2. A running Waybar instance (the script outputs JSON for Waybar integration)
 3. Internet connectivity for performing update checks
 4. Desktop notification system compatible with `notify-send`
 
+### Configuration Assumptions:
+- Your flake is in `~/.config/nixos` (configurable via Home Manager module)
+- Your flake's nixosConfigurations is named the same as your `$hostname`
+
 ## How to Use
-You can either use the nix flake (default.nix), or install it manually. For a manual installation, download the `update-checker` script, put it in your [PATH](https://unix.stackexchange.com/a/26059) and make it executable (`chmod +x update-checker`). Add the icons to your ~/.icons folder.
+
+### Installation Methods
+
+This project provides multiple installation methods through its Nix flake:
+
+#### 1. Using the Flake as a Package
+
+Add to your flake inputs:
+```nix
+{
+  inputs.waybar-nixos-updates.url = "github:yourusername/waybar-nixos-updates";
+  
+  # In your system configuration:
+  environment.systemPackages = [
+    inputs.waybar-nixos-updates.packages.${system}.default
+  ];
+}
+```
+
+#### 2. Using Home Manager Module (Recommended)
+
+This provides the most flexibility for configuration:
+
+```nix
+{
+  inputs.waybar-nixos-updates.url = "github:yourusername/waybar-nixos-updates";
+  
+  # In your home-manager configuration:
+  imports = [ inputs.waybar-nixos-updates.homeManagerModules.default ];
+  
+  programs.waybar-nixos-updates = {
+    enable = true;
+    updateInterval = 3600;          # Check every hour
+    nixosConfigPath = "~/.config/nixos";
+    skipAfterBoot = true;           # Skip checks after boot/resume
+    gracePeriod = 60;               # Wait 60s after boot
+    updateLockFile = false;         # Use temp dir for checks
+  };
+  
+  # Then add to your waybar configuration:
+  programs.waybar.settings.mainBar."custom/nix-updates" = 
+    config.programs.waybar-nixos-updates.waybarConfig;
+}
+```
+
+#### 3. Using NixOS Module
+
+For system-wide installation:
+```nix
+{
+  imports = [ inputs.waybar-nixos-updates.nixosModules.default ];
+  
+  services.waybar-nixos-updates.enable = true;
+}
+```
+
+#### 4. Using the Legacy default.nix
+
+You can still use the included `default.nix` file with Home Manager:
+```nix
+imports = [ ./path-to-waybar-nixos-updates/default.nix ];
+```
+
+#### 5. Manual Installation
+
+For a manual installation, download the `update-checker` script, put it in your [PATH](https://unix.stackexchange.com/a/26059) and make it executable (`chmod +x update-checker`). Add the icons to your ~/.icons folder.
 
 ### Configuration Options
 You can modify these variables at the top of the script to customize behavior:
@@ -49,7 +123,10 @@ You can modify these variables at the top of the script to customize behavior:
 - `UPDATE_LOCK_FILE`: Whether to update the lock file directly or use a temporary copy (default: false)
 
 ### Waybar Integration
-To configure, add one of the following configurations to your Waybar config (`~/.config/waybar/config`).
+
+If you're using the Home Manager module, the waybar configuration is automatically provided through `config.programs.waybar-nixos-updates.waybarConfig`. Otherwise, configure manually:
+
+To configure manually, add one of the following configurations to your Waybar config (`~/.config/waybar/config`).
 
 In json (if adding directly to the config file):
 ```json
@@ -74,7 +151,7 @@ In json (if adding directly to the config file):
 In nix (if adding it "the nix way" through home-manager):
 ```nix
 "custom/nix-updates" = {
-  exec = "$HOME/bin/update-checker";
+  exec = "$HOME/bin/update-checker";  # Or "${pkgs.waybar-nixos-updates}/bin/update-checker" if using the flake
   signal = 12;
   on-click = "";
   on-click-right = "rm ~/.cache/nix-update-last-run";
@@ -91,7 +168,116 @@ In nix (if adding it "the nix way" through home-manager):
 };
 ```
 
+**Note:** If using the Home Manager module, you can simply reference the pre-configured waybar settings:
+```nix
+programs.waybar.settings.mainBar."custom/nix-updates" = 
+  config.programs.waybar-nixos-updates.waybarConfig;
+```
+
 To style use the `#custom-nix-updates` ID in your Waybar styles file (`~/.config/waybar/styles.css`). For more information see the [Waybar wiki](https://github.com/Alexays/Waybar/wiki).
+
+### Complete Configuration Example
+
+Here's a complete example of using waybar-nixos-updates with Home Manager:
+
+```nix
+# flake.nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    home-manager.url = "github:nix-community/home-manager";
+    waybar-nixos-updates.url = "github:yourusername/waybar-nixos-updates";
+  };
+
+  outputs = { self, nixpkgs, home-manager, waybar-nixos-updates, ... }: {
+    nixosConfigurations.hostname = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        home-manager.nixosModules.home-manager
+        {
+          home-manager.users.youruser = { config, ... }: {
+            imports = [ waybar-nixos-updates.homeManagerModules.default ];
+            
+            # Enable the waybar-nixos-updates module
+            programs.waybar-nixos-updates = {
+              enable = true;
+              updateInterval = 3600;
+              nixosConfigPath = "~/.config/nixos";
+              updateLockFile = false;  # Use temp directory for safety
+            };
+            
+            # Configure Waybar
+            programs.waybar = {
+              enable = true;
+              settings = {
+                mainBar = {
+                  modules-right = [ "custom/nix-updates" "clock" "battery" ];
+                  "custom/nix-updates" = config.programs.waybar-nixos-updates.waybarConfig;
+                };
+              };
+              style = ''
+                #custom-nix-updates {
+                  color: #89b4fa;
+                  margin: 0 10px;
+                }
+                #custom-nix-updates.has-updates {
+                  color: #f38ba8;
+                  font-weight: bold;
+                }
+                #custom-nix-updates.updating {
+                  color: #f9e2af;
+                }
+                #custom-nix-updates.error {
+                  color: #eba0ac;
+                }
+              '';
+            };
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+### Flake Outputs
+
+The flake provides the following outputs:
+
+- **packages.default**: The waybar-nixos-updates package with all dependencies
+- **homeManagerModules.default**: Home Manager module for user-level configuration
+- **nixosModules.default**: NixOS module for system-level installation
+- **apps.default**: Direct execution of the update-checker script
+
+### Troubleshooting
+
+#### Common Issues and Solutions
+
+1. **Script not finding NixOS configuration**
+   - Ensure your configuration is at `~/.config/nixos` or update the `nixosConfigPath` option
+   - Verify your hostname matches your nixosConfiguration name: `echo $HOSTNAME`
+
+2. **Icons not displaying**
+   - When using Home Manager module, icons are automatically installed to `~/.icons`
+   - For manual installation, ensure icons are in `~/.icons/` directory
+   - Check that your notification daemon supports PNG icons
+
+3. **Updates not being detected**
+   - Check network connectivity: `ping -c 1 8.8.8.8`
+   - Verify nvd is installed: `which nvd`
+   - Clear cache and force update: `rm ~/.cache/nix-update-* && pkill -RTMIN+12 waybar`
+
+4. **"Check tooltip for detailed error message"**
+   - Hover over the waybar module to see the full error
+   - Common causes: missing dependencies, flake evaluation errors, network issues
+
+5. **Module shows "updating" indefinitely**
+   - Remove the updating flag: `rm ~/.cache/nix-update-updating-flag`
+   - Restart waybar: `pkill waybar && waybar &`
+
+6. **Configuration changes not taking effect**
+   - When using the wrapper script, restart waybar after rebuilding
+   - Verify the correct script is being executed: check waybar config `exec` path
 
 ### System Integration
 You can integrate the updater with your system by modifying your flake update script and your rebuild script to pass the UPDATE_FLAG variable and the REBUILD_FLAG variable, respectively.
@@ -158,3 +344,11 @@ In regards to external network requests, the script uses `ping -c 1 -W 2 8.8.8.8
 - That your system is running and online
 - The fact you're using this specific script
 - Your IP address to Google's DNS infrastructure
+
+## Contributing
+
+PRs are welcome! Please test your changes and ensure they work with both the flake installation methods and manual installation.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
