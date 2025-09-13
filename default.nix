@@ -11,6 +11,7 @@ let
     LAST_RUN_FILE="$CACHE_DIR/nix-update-last-run"
     LAST_RUN_TOOLTIP="$CACHE_DIR/nix-update-tooltip"
     BOOT_MARKER_FILE="$CACHE_DIR/nix-update-boot-marker"  # Marker file to detect boot/resume
+    TOGGLE_FILE="$CACHE_DIR/nix-update-toggle"  # Toggle file to enable/disable update checking
 
     # The grace period prevents the update checker from running immediately after:
     # 1. First boot - when the system has just started up
@@ -36,13 +37,15 @@ let
     REBUILD_FLAG="$CACHE_DIR/nix-update-rebuild-flag"
 
     # The UPDATING_FLAG signals if upgrade process is currently performing
-    # This is required to force waybar module to render while we wait for nixos rebuild
-    # and also this is enhances UI/UX side
+    # This is required to force waybar module to render while we wait for nixos rebuild.
     UPDATING_FLAG="$CACHE_DIR/nix-update-updating-flag"
 
 
     # ===== Initialize Files =====
     function init_files() {
+        # Ensure cache directory exists
+        mkdir -p "$CACHE_DIR"
+        
         # Create the state file if it doesn't exist
         if [ ! -f "$STATE_FILE" ]; then
             echo "0" > "$STATE_FILE"
@@ -55,13 +58,18 @@ let
 
         # Create the tooltip file if it doesn't exist
         if [ ! -f "$LAST_RUN_TOOLTIP" ]; then
-            updates=$(cat "$STATE_FILE")
-            if [ "$updates" -eq 0 ]; then
+            updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
+            if [ "$updates" = "0" ] || [ -z "$updates" ]; then
                 echo "System updated" > "$LAST_RUN_TOOLTIP"
             else
                 # Will be populated during update check
-                echo "" > "$LAST_RUN_TOOLTIP"
+                echo "Checking for updates..." > "$LAST_RUN_TOOLTIP"
             fi
+        fi
+        
+        # Create the toggle file if it doesn't exist (default: enabled)
+        if [ ! -f "$TOGGLE_FILE" ]; then
+            echo "enabled" > "$TOGGLE_FILE"
         fi
     }
 
@@ -144,11 +152,12 @@ let
         }
 
     function check_network_connectivity() {
-        # Check if either ethernet or wireless is connected
-        if ping -c 1 -W 2 8.8.8.8 > /dev/null 2>&1; then
-            return 0  # Connected to the internet
+        # Check if we have a default route and an IP on a non-loopback interface
+        if ip route | grep -q "^default" && \
+           ip -4 addr show | grep -E "inet .* scope global" > /dev/null 2>&1; then
+            return 0  # Network is configured
         else
-            return 1  # Not connected to the internet
+            return 1  # No network
         fi
     }
 
@@ -169,9 +178,14 @@ let
     }
 
     function var_setter() {
+        # Ensure updates is a number
+        if [ -z "$updates" ]; then
+            updates=0
+        fi
+        
         if [ "$updates" -ne 0 ]; then
             alt="has-updates"
-            tooltip=$(cat "$LAST_RUN_TOOLTIP")
+            tooltip=$(cat "$LAST_RUN_TOOLTIP" 2>/dev/null || echo "$updates updates available")
         else
             alt="updated"
             tooltip="System updated"
@@ -189,7 +203,7 @@ let
         local updates=0
         local tooltip=""
         local error_output=""
-    
+
         if [ "$UPDATE_LOCK_FILE" = "true" ]; then
             # Use the config directory directly
             cd "$NIXOS_CONFIG_PATH" || return 1
@@ -222,7 +236,7 @@ let
                 return 1
             fi
         fi
-    
+
         # Save results
         echo "$updates" > "$STATE_FILE"
         echo "$(date +%s)" > "$LAST_RUN_FILE"
@@ -241,15 +255,79 @@ let
         return 0
     }
 
+    # ===== Toggle Function =====
+    function toggle_updates() {
+        CACHE_DIR="$HOME/.cache"
+        TOGGLE_FILE="$CACHE_DIR/nix-update-toggle"
+        
+        # Initialize toggle file if it doesn't exist (default: enabled)
+        if [ ! -f "$TOGGLE_FILE" ]; then
+            echo "enabled" > "$TOGGLE_FILE"
+        fi
+        
+        # Get current state
+        current_state=$(cat "$TOGGLE_FILE")
+        
+        # Toggle the state
+        if [ "$current_state" = "enabled" ]; then
+            echo "disabled" > "$TOGGLE_FILE"
+        else
+            echo "enabled" > "$TOGGLE_FILE"
+        fi
+        
+        # Send signal to refresh waybar update module
+        pkill -x -RTMIN+12 .waybar-wrapped
+    }
+
     # ===== Main Function =====
     function main() {
         init_files
+
+        # Check if update checking is disabled via toggle
+        if [ -f "$TOGGLE_FILE" ] && [ "$(cat "$TOGGLE_FILE")" = "disabled" ]; then
+            # Updates are disabled, show last known state without checking
+            local updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
+            local alt=""
+            local tooltip=""
+            
+            # Read the existing tooltip (which contains the actual update list)
+            local existing_tooltip=$(cat "$LAST_RUN_TOOLTIP" 2>/dev/null || "")
+            
+            # Get last run timestamp and format it
+            local last_run=$(cat "$LAST_RUN_FILE" 2>/dev/null || echo "0")
+            local last_run_formatted=""
+            if [ "$last_run" != "0" ]; then
+                last_run_formatted=$(date -d "@$last_run" "+%Y-%m-%d %H:%M")
+            else
+                last_run_formatted="never"
+            fi
+            
+            if [ "$updates" = "0" ] || [ -z "$updates" ]; then
+                alt="disabled"
+                tooltip="Updates disabled (Last checked: $last_run_formatted)"
+            else
+                alt="disabled"
+                # Show the original tooltip content with disabled indicator and timestamp
+                if [ -n "$existing_tooltip" ] && [ "$existing_tooltip" != "System updated" ]; then
+                    # Preserve the original update list with timestamp
+                    tooltip="Updates disabled (Last checked: $last_run_formatted)\n=================================================\n$existing_tooltip"
+                else
+                    # Fallback if no proper tooltip exists
+                    tooltip="Updates disabled ($updates pending)\nLast checked: $last_run_formatted"
+                fi
+            fi
+            # Output JSON without modifying the tooltip file
+            echo "{ \"text\":\"$updates\", \"alt\":\"$alt\", \"tooltip\":\"$tooltip\" }"
+            exit 0
+        fi
 
         # Check if we're in post-boot/resume grace period
         if [ "$SKIP_AFTER_BOOT" = "true" ] && check_boot_resume; then
             # Skip update check during grace period after boot or resume from hibernation
             # This prevents unnecessary resource usage during system startup or wakeup
-            updates=$(cat "$STATE_FILE")
+            local updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
+            local alt=""
+            local tooltip=""
             var_setter
             echo "{ \"text\":\"$updates\", \"alt\":\"$alt\", \"tooltip\":\"$tooltip\" }"
             exit 0
@@ -257,8 +335,7 @@ let
 
         # Check for network connectivity before proceeding
         if check_network_connectivity; then
-
-          local updates=0
+          local updates=""
           local alt=""
           local tooltip=""
 
@@ -269,36 +346,44 @@ let
               tooltip="System updated"
               echo "$updates" > "$STATE_FILE"
               echo "$tooltip" > "$LAST_RUN_TOOLTIP"
-              if [ -f $UPDATE_FLAG ]; then
+              if [ -f "$UPDATE_FLAG" ]; then
                 rm "$UPDATE_FLAG"
               fi
               rm "$REBUILD_FLAG"
           else
               # Read state from files
-              updates=$(cat "$STATE_FILE")
-              local last_run=$(cat "$LAST_RUN_FILE")
+              updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
+              local last_run=$(cat "$LAST_RUN_FILE" 2>/dev/null || echo "0")
               local current_time=$(date +%s)
 
+             
               # Decide whether to show saved state or perform new check
               if [ $((current_time - last_run)) -gt "$UPDATE_INTERVAL" ]; then
                   # Separating updating and updated phase
                   if [ -f $UPDATING_FLAG ]; then
                       # Time to check for updates
                       if check_for_updates; then
-                          updates=$(cat "$STATE_FILE")
+                          updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
                           var_setter
                       else
                           # Update check failed - read the full error from tooltip file
-                          updates=""
+                          updates="0"
                           alt="error"
-                          tooltip=$(cat "$LAST_RUN_TOOLTIP")
+                          tooltip=$(cat "$LAST_RUN_TOOLTIP" 2>/dev/null || echo "Check failed")
                           send_notification "updates-failed" "Update Check Failed" "Check tooltip for detailed error message"
                       fi
+                      
                       rm $UPDATING_FLAG
                   else
-                      updates=$(cat "$STATE_FILE")
+                      updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
                       alt="updating"
-                      tooltip="Checking for updates"
+                      # Show previous updates while checking for new ones
+                      local existing_tooltip=$(cat "$LAST_RUN_TOOLTIP" 2>/dev/null || "")
+                      if [ "$updates" != "0" ] && [ -n "$existing_tooltip" ] && [ "$existing_tooltip" != "System updated" ]; then
+                          tooltip="Checking for updates... Previous check found:\n=============================================\n$existing_tooltip"
+                      else
+                          tooltip="Checking for updates..."
+                      fi
                       touch $UPDATING_FLAG
                       # Rerun same script just to show updating status and
                       # run update process in separate thread
@@ -311,8 +396,12 @@ let
               fi
           fi
         else
-            updates=$(cat "$STATE_FILE")
-            var_setter
+            updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
+            if [ -z "$updates" ]; then
+                updates="0"
+            fi
+            alt="updated"
+            tooltip="No network connection"
             send_notification "updates-failed" "Update Check Failed" "Not connected to the internet"
         fi
 
@@ -320,8 +409,16 @@ let
         echo "{ \"text\":\"$updates\", \"alt\":\"$alt\", \"tooltip\":\"$tooltip\" }"
     }
 
-    # Execute main function
-    main
+    # Error handler to ensure we always output valid JSON
+    trap 'echo "{ \"text\":\"?\", \"alt\":\"error\", \"tooltip\":\"Script error occurred\" }"' ERR
+    
+    # Check for command-line arguments
+    if [ "$1" = "toggle" ]; then
+        toggle_updates
+    else
+        # Execute main function
+        main
+    fi
   '';
 
   in

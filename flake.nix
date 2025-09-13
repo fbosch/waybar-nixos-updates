@@ -53,7 +53,8 @@
                 pkgs.gnused
                 pkgs.procps
                 pkgs.systemd
-                pkgs.iputils
+                pkgs.iproute2
+                pkgs.inetutils
               ]}
             
             runHook postInstall
