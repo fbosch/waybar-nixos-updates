@@ -40,7 +40,7 @@ When using the flake, all dependencies are automatically handled. The script req
 
 This project provides multiple installation methods through its Nix flake:
 
-#### 1. 📦 Using the Flake as a Package
+#### 1. Using the Flake as a Package
 
 Add to your flake inputs:
 ```nix
@@ -54,7 +54,7 @@ Add to your flake inputs:
 }
 ```
 
-#### 2. 🏠 Using Home Manager Module (Recommended)
+#### 2. Using Home Manager Module (Recommended)
 
 This provides the most flexibility for configuration:
 
@@ -80,7 +80,7 @@ This provides the most flexibility for configuration:
 }
 ```
 
-#### 3. ⚙️ Using NixOS Module
+#### 3. Using NixOS Module
 
 For system-wide installation:
 ```nix
@@ -91,14 +91,14 @@ For system-wide installation:
 }
 ```
 
-#### 4. 🔄 Using the Legacy default.nix
+#### 4. Using the Legacy default.nix
 
 You can still use the included `default.nix` file with Home Manager:
 ```nix
 imports = [ ./path-to-waybar-nixos-updates/default.nix ];
 ```
 
-#### 5. 🔨 Manual Installation
+#### 5. Manual Installation
 
 For a manual installation, download the `update-checker` script, put it in your [PATH](https://unix.stackexchange.com/a/26059) and make it executable (`chmod +x update-checker`). Add the icons to your ~/.icons folder.
 
@@ -253,7 +253,7 @@ The flake provides the following outputs:
 
 ### 🔍 Troubleshooting
 
-#### 🐛 Common Issues and Solutions
+#### Common Issues and Solutions
 
 1. **Script not finding NixOS configuration**
    - Ensure your configuration is at `~/.config/nixos` or update the `nixosConfigPath` option
@@ -284,7 +284,7 @@ The flake provides the following outputs:
 ### ⚡ System Integration
 You can integrate the updater with your system by modifying your flake update script and your rebuild script to pass the UPDATE_FLAG variable and the REBUILD_FLAG variable, respectively.
 
-#### 🔄 Your Flake Update Script and the UPDATE_FLAG
+#### Your Flake Update Script and the UPDATE_FLAG
 You can integrate your system to control the UPDATE_FLAG, which is saved in the "nix-update-update-flag" cache file. If you have UPDATE_LOCK_FILE set to "true", no further action is required. The program will detect if your lock file has been updated. If you have UPDATE_LOCK_FILE set to "false", the "nix-update-update-flag" file will signal that your lock file has been updated.
 
 To integrate the update checker with your system, add the following to the update script you use to update your system's lock file (i.e. your "nix flake update" script), so that the output of nvd diff is piped in:
