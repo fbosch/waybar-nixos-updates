@@ -78,8 +78,22 @@
         local icon="$1"
         local title="$2"
         local message="$3"
-        local expire_flag="$4" # Optional fourth parameter for -e flag
-        notify-send -i "$HOME/.icons/$icon.png" "$title" "$message" $expire_flag
+        local expire_flag="${4:-}" # Optional fourth parameter for -e flag
+
+        if ! command -v notify-send >/dev/null 2>&1; then
+            return 0
+        fi
+
+        local args=(-i "$HOME/.icons/$icon.png" "$title" "$message")
+        if [ -n "$expire_flag" ]; then
+            args+=("$expire_flag")
+        fi
+
+        notify-send "${args[@]}" >/dev/null 2>&1 || true
+    }
+
+    function refresh_waybar() {
+        pkill -x -RTMIN+12 .waybar-wrapped >/dev/null 2>&1 || true
     }
 
     function check_boot_resume() {
@@ -153,8 +167,8 @@
 
     function check_network_connectivity() {
         # Check if we have a default route and an IP on a non-loopback interface
-        if ip route | grep -q "^default" && \
-           ip -4 addr show | grep -E "inet .* scope global" > /dev/null 2>&1; then
+        if ip route 2>/dev/null | grep -q "^default" && \
+           ip -4 addr show 2>/dev/null | grep -E "inet .* scope global" > /dev/null 2>&1; then
             return 0  # Network is configured
         else
             return 1  # No network
@@ -221,7 +235,7 @@
             fi
         else
             # Use a temp directory to avoid modifying lock file
-            cp -r "$NIXOS_CONFIG_PATH"/* "$tempdir"
+            cp -a "$NIXOS_CONFIG_PATH"/. "$tempdir"
             cd "$tempdir" || return 1
             nix flake update
             # Capture stderr and extract the error line
@@ -276,7 +290,7 @@
         fi
         
         # Send signal to refresh waybar update module
-        pkill -x -RTMIN+12 .waybar-wrapped
+        refresh_waybar
     }
 
     # ===== Main Function =====
@@ -349,7 +363,7 @@
               if [ -f "$UPDATE_FLAG" ]; then
                 rm "$UPDATE_FLAG"
               fi
-              rm "$REBUILD_FLAG"
+              rm -f "$REBUILD_FLAG"
           else
               # Read state from files
               updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
@@ -360,7 +374,7 @@
               # Decide whether to show saved state or perform new check
               if [ $((current_time - last_run)) -gt "$UPDATE_INTERVAL" ]; then
                   # Separating updating and updated phase
-                  if [ -f $UPDATING_FLAG ]; then
+                  if [ -f "$UPDATING_FLAG" ]; then
                       # Time to check for updates
                       if check_for_updates; then
                           updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
@@ -373,7 +387,7 @@
                           send_notification "updates-failed" "Update Check Failed" "Check tooltip for detailed error message"
                       fi
                       
-                      rm $UPDATING_FLAG
+                      rm -f "$UPDATING_FLAG"
                   else
                       updates=$(cat "$STATE_FILE" 2>/dev/null || echo "0")
                       alt="updating"
@@ -384,10 +398,10 @@
                       else
                           tooltip="Checking for updates..."
                       fi
-                      touch $UPDATING_FLAG
+                      touch "$UPDATING_FLAG"
                       # Rerun same script just to show updating status and
                       # run update process in separate thread
-                      pkill -x -RTMIN+12 .waybar-wrapped
+                      refresh_waybar
                   fi
               else
                   # Use saved state
@@ -410,7 +424,7 @@
     }
 
     # Error handler to ensure we always output valid JSON
-    trap 'echo "{ \"text\":\"?\", \"alt\":\"error\", \"tooltip\":\"Script error occurred\" }"' ERR
+    trap 'echo "{ \"text\":\"?\", \"alt\":\"error\", \"tooltip\":\"Script error occurred\" }" >&2' ERR
     
     # Check for command-line arguments
     if [ "$1" = "toggle" ]; then
